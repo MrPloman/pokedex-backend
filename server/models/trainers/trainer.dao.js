@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const trainerSchema = require("./trainer.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const config = require("../../config/properties");
+const { SECRET } = require("../../config");
 
 trainerSchema.statics = {
     create: async function(data, callback) {
@@ -18,10 +18,13 @@ trainerSchema.statics = {
     me: function(query, callback) {
         this.find(query, callback);
     },
+    verify: function(query, callback) {
+        this.find(query, callback);
+    },
     update: function(query, callback) {},
 };
 trainerSchema.methods.generateToken = async(trainer) => {
-    const token = await jwt.sign({ id: trainer._id }, config.SECRET, {
+    const token = await jwt.sign({ id: trainer._id }, SECRET, {
         expiresIn: 60 * 60 * 24,
     });
     return token;

@@ -28,6 +28,7 @@ const trainerSchema = new Schema({
     role: { type: String, default: "USER_ROLE", enum: validRoles },
     pokemons: [{ type: String, required: false }],
     google: { type: Boolean, required: false, default: false },
+    active: { type: Boolean, required: false, default: false },
 });
 
 module.exports = trainerSchema;

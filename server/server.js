@@ -1,5 +1,6 @@
 //IMPORTS
-require("./config/config");
+const { PORT, MAIN_URL } = require("./config");
+const mailingRoutes = require("./routes/mail.routes");
 const trainerRoutes = require("./routes/trainer.routes");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -9,7 +10,6 @@ const cors = require("cors");
 
 //DECLARATIONS
 const app = express();
-const port = process.env.PORT;
 
 //INIT
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -23,8 +23,11 @@ app.use(cors());
 db();
 
 //ROUTES
-app.use(router);
+app.use("/api/", router);
 trainerRoutes(router);
+mailingRoutes(router);
 
 //RUNNING
-app.listen(port, () => console.log(`listening on http://localhost:${port}`));
+app.listen(PORT, () => {
+    console.log(`listening on ${MAIN_URL}`);
+});

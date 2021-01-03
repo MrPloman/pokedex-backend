@@ -1,6 +1,8 @@
 const Trainer = require("../models/trainers/trainer.dao");
+
 const jwt = require("jsonwebtoken");
-const config = require("../config/properties");
+const { SECRET } = require("../config");
+const { sendEmail } = require("./mailing.controller");
 
 exports.registerTrainer = (req, res, next) => {
     let data = req.body;
@@ -18,6 +20,7 @@ exports.registerTrainer = (req, res, next) => {
             message: "Trainer Created Successfully",
             trainer: trainerData,
         });
+        await sendEmail({ body: { email: trainerData.email, _id: trainerData._id } });
     });
 };
 exports.login = (req, res, next) => {
@@ -37,21 +40,26 @@ exports.login = (req, res, next) => {
                 },
             });
         } else {
-            const comparePassword = await trainer.validatePassword(
-                trainer.password,
-                getTrainer.password
-            );
-            console.log(comparePassword);
-
-            if (comparePassword === true) {
-                let token = await trainer.generateToken(getTrainer);
-                res.json({
-                    email: getTrainer.email,
-                    name: getTrainer.name,
-                    token: token,
-                });
+            console.log(getTrainer);
+            if (getTrainer.active === false) {
+                res.status(403).json({ message: "Email not verified", status: 403 });
             } else {
-                res.json({ error: { status: 400, message: `Passwords don't match` } });
+                const comparePassword = await trainer.validatePassword(
+                    trainer.password,
+                    getTrainer.password
+                );
+                console.log(comparePassword);
+
+                if (comparePassword === true) {
+                    let token = await trainer.generateToken(getTrainer);
+                    res.json({
+                        email: getTrainer.email,
+                        name: getTrainer.name,
+                        token: token,
+                    });
+                } else {
+                    res.json({ error: { status: 400, message: `Passwords don't match` } });
+                }
             }
         }
     });
@@ -59,16 +67,32 @@ exports.login = (req, res, next) => {
 exports.me = (req, res, next) => {
     Trainer.me(async(err, user) => {
         const accessToken = await req.headers["x-access-token"];
-        if (err) res.json({ error: err });
         if (!accessToken) {
             res.json({ error: err });
         } else {
-            const decoded = jwt.verify(accessToken, config.SECRET);
+            const decoded = await jwt.verify(accessToken, SECRET);
+            console.log(decoded);
+
             const getTrainer = await Trainer.findById(decoded.id);
             if (!getTrainer) {
-                return ErrorEvent;
+                res.json(err);
             } else {
                 res.json({ trainer: getTrainer });
+            }
+        }
+    });
+};
+exports.verify = (req, res) => {
+    Trainer.verify(async(err, trainer) => {
+        if (req) {
+            let data = req.body;
+            const newTrainer = await Trainer.findByIdAndUpdate({ _id: data._id }, {
+                $set: { active: true },
+            });
+            if (newTrainer === undefined) {
+                res.json({ status: 404, message: "User not found" });
+            } else {
+                res.json({ status: 200, message: "Activated Successfully" });
             }
         }
     });

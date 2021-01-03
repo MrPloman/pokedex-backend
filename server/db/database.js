@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
-const dbURL = require("../config/properties").DB;
+const { DB } = require("../config");
 module.exports = () => {
     mongoose
-        .connect(dbURL, {
+        .connect(DB, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         })
-        .then(() => console.log("MongoDB Connected on", dbURL))
+        .then(() => console.log("MongoDB Connected on", DB))
         .catch((err) => console.log(err));
 };
