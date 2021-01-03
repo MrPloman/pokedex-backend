@@ -20,7 +20,7 @@ exports.registerTrainer = (req, res, next) => {
             message: "Trainer Created Successfully",
             trainer: trainerData,
         });
-        await sendEmail({ body: { email: trainerData.email, _id: trainerData._id } });
+        await sendEmail({ body: { email: trainerData.email, id: trainerData._id } });
     });
 };
 exports.login = (req, res, next) => {
@@ -85,8 +85,8 @@ exports.me = (req, res, next) => {
 exports.verify = (req, res) => {
     Trainer.verify(async(err, trainer) => {
         if (req) {
-            let data = req.body;
-            const newTrainer = await Trainer.findByIdAndUpdate({ _id: data._id }, {
+            let data = req.params;
+            const newTrainer = await Trainer.findByIdAndUpdate({ _id: data.id }, {
                 $set: { active: true },
             });
             if (newTrainer === undefined) {

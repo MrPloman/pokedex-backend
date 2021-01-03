@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
-const { EMAIL, PASSWORD } = require("../config");
+const { EMAIL, PASSWORD, MAIN_URL, PORT } = require("../config");
 exports.sendEmail = async(req, res) => {
     const transporter = nodemailer.createTransport({
         service: "Gmail",
@@ -20,12 +20,12 @@ exports.sendEmail = async(req, res) => {
         extName: ".hbs",
     };
     transporter.use("compile", hbs(handlebarOptions));
-    console.log(req.body);
     const mailOptions = {
         from: "PokedexApp",
         to: req.body.email,
         subject: "Confirmation Register",
-        template: "register",
+
+        html: `<p>Click <a href="${MAIN_URL}/api/trainer/verify/${req.body.id}">here</a> to reset your password</p>'`,
     };
 
     await transporter.sendMail(mailOptions, function(error, info) {
@@ -35,7 +35,6 @@ exports.sendEmail = async(req, res) => {
         } else {
             console.log("Email sent");
             res.status(200).jsonp(req.body);
-            res.render("../../views/register", { user: req.body });
         }
     });
 };
