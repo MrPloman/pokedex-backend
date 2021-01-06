@@ -3,6 +3,7 @@ module.exports = {
     EMAIL: "development.ploman@gmail.com",
     PORT: 3100,
     MAIN_URL: `http://localhost:3100`,
+    FRONT_URL: `http://localhost:3000`,
     DB: "mongodb://localhost:27017/pokedex",
     SECRET: "mySecretToken",
 };

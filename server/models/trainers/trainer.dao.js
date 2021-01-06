@@ -21,7 +21,9 @@ trainerSchema.statics = {
     verify: function(query, callback) {
         this.find(query, callback);
     },
-    update: function(query, callback) {},
+    recovery: function(query, callback) {
+        this.find(query, callback);
+    },
 };
 trainerSchema.methods.generateToken = async(trainer) => {
     const token = await jwt.sign({ id: trainer._id }, SECRET, {

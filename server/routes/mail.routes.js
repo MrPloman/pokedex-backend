@@ -1,5 +1,5 @@
 const Mailing = require("../controllers/mailing.controller");
 module.exports = (router) => {
-    router.post("/email", Mailing.sendEmail);
-    /*  router.get("/email/verify/:id"); */
+    router.post("/email/confirmation", Mailing.sendVerificationEmail);
+    router.post("/email/recovery", Mailing.sendRecoveryEmail);
 };

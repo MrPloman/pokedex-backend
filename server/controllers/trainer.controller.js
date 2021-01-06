@@ -2,7 +2,8 @@ const Trainer = require("../models/trainers/trainer.dao");
 
 const jwt = require("jsonwebtoken");
 const { SECRET } = require("../config");
-const { sendEmail } = require("./mailing.controller");
+const { sendVerificationEmail } = require("./mailing.controller");
+const { sendRecoveryEmail } = require("./mailing.controller");
 
 exports.registerTrainer = (req, res, next) => {
     let data = req.body;
@@ -20,7 +21,9 @@ exports.registerTrainer = (req, res, next) => {
             message: "Trainer Created Successfully",
             trainer: trainerData,
         });
-        await sendEmail({ body: { email: trainerData.email, id: trainerData._id } });
+        await sendVerificationEmail({
+            body: { email: trainerData.email, id: trainerData._id },
+        });
     });
 };
 exports.login = (req, res, next) => {
@@ -30,35 +33,48 @@ exports.login = (req, res, next) => {
         password: data.password,
     });
     Trainer.login(async(err, tr) => {
+        console.log(tr);
         if (err) res.json({ error: err });
-        const getTrainer = await Trainer.findOne({ email: data.email });
+        const getTrainer = await Trainer.findOne({ email: trainer.email });
         if (!getTrainer) {
-            res.json({
-                error: {
-                    status: 404,
-                    message: "The email don't match with the password",
-                },
-            });
+            res
+                .json({
+                    result: {
+                        status: 404,
+                        message: "Account Not Registered",
+                    },
+                })
+                .status(404);
         } else {
-            console.log(getTrainer);
             if (getTrainer.active === false) {
-                res.status(403).json({ message: "Email not verified", status: 403 });
+                res
+                    .status(403)
+                    .json({ result: { message: "Email not verified", status: 403 } });
             } else {
                 const comparePassword = await trainer.validatePassword(
                     trainer.password,
                     getTrainer.password
                 );
-                console.log(comparePassword);
 
                 if (comparePassword === true) {
                     let token = await trainer.generateToken(getTrainer);
-                    res.json({
-                        email: getTrainer.email,
-                        name: getTrainer.name,
-                        token: token,
-                    });
+                    res
+                        .json({
+                            result: {
+                                data: {
+                                    email: getTrainer.email,
+                                    name: getTrainer.name,
+                                    token: token,
+                                },
+                                status: 200,
+                                message: "Success",
+                            },
+                        })
+                        .status(200);
                 } else {
-                    res.json({ error: { status: 400, message: `Passwords don't match` } });
+                    res
+                        .json({ result: { status: 400, message: `Passwords don't match` } })
+                        .status(400);
                 }
             }
         }
@@ -86,14 +102,64 @@ exports.verify = (req, res) => {
     Trainer.verify(async(err, trainer) => {
         if (req) {
             let data = req.params;
-            const newTrainer = await Trainer.findByIdAndUpdate({ _id: data.id }, {
-                $set: { active: true },
+            await Trainer.findByIdAndUpdate({ _id: data.id }, {
+                    $set: { active: true },
+                },
+                function(err, user) {
+                    if (err) {
+                        res.json({
+                            status: 404,
+                            title: "Account Not Found",
+                            message: "This account doesn't exist, try it with another one which hasn't been already activated",
+                        });
+                    } else {
+                        console.log(user);
+                        if (user.active === true) {
+                            res.json({
+                                status: 200,
+                                title: "This Account has been already activated",
+                                message: "We can't activate this account because it was activated previously, so you can go to login and try to access",
+                            });
+                        } else {
+                            res.json({
+                                status: 200,
+                                title: "Activated Successfully",
+                                message: "Congratulations! Your account has been activated!",
+                            });
+                        }
+                    }
+                }
+            );
+        }
+    });
+};
+
+exports.recovery = (req, res) => {
+    Trainer.recovery(async(err, trainer) => {
+        const { email } = req.body;
+        const getTrainer = await Trainer.findOne({ email: email });
+        console.log(getTrainer);
+        if (!getTrainer) {
+            res
+                .json({
+                    result: {
+                        status: 404,
+                        message: "Account Not Registered",
+                    },
+                })
+                .status(404);
+        } else {
+            res
+                .json({
+                    result: {
+                        status: 200,
+                        message: "Recovery Password email sent successfully",
+                    },
+                })
+                .status(200);
+            await sendRecoveryEmail({
+                body: { email: getTrainer.email, id: getTrainer._id },
             });
-            if (newTrainer === undefined) {
-                res.json({ status: 404, message: "User not found" });
-            } else {
-                res.json({ status: 200, message: "Activated Successfully" });
-            }
         }
     });
 };
